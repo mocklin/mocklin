@@ -1,0 +1,44 @@
+## EDA(explore data analysis)
+1.knn补充缺失值
+- 适用场景，类别数据
+1）如何获取所有类别值
+ a)探索性分析 >>> df_train['brand'].unique() 
+ b)将类别转化为编码 
+    >>> for col in df_encode.columns:
+    >>>   df_encode[col]=df_encode[col].astype('category').cat.codes.replace(-1, np.nan)
+    >>> df_encode[col]
+    0           23
+    1           34
+    2          218
+    3          920
+    4         1362
+    其中，.astype('category')将 col 列的值转换为 category 数据类型，分类数据类型可以有效表示有限的类别（如 ['Toyota', 'BMW', 'Honda']），并为每个类别分配一个唯一的数值编码。
+      .cat.codes获取类别变量的整数编码，每个类别会被分配一个唯一的整数编号：编号顺序通常基于字母顺序（除非显式定义类别的顺序）。如果列中有缺失值（NaN），这些值会被编码为 -1。
+ c)启用knn的插补法
+    >>> knn_imputer=KNNImputer(n_neighbors=5) #n_neighbors: 指定用于插补的最近邻数量
+    >>> df_imputed=pd.DataFrame(knn_imputer.fit_transform(df_encode),columns=df_encode.columns)
+        fit_transform(): fit: 学习数据的结构（如找到最近邻居）。 transform: 用学习到的信息替换数据中的缺失值。
+ d)将补插后的数据映射为原来的类别
+    >>> for col in df_train.select_dtypes(include='object').columns:
+    >>>    categories=df_train[col].astype('category').cat.categories
+    >>>    df_imputed[col]=df_imputed[col].round().astype(int).map(dict(enumarate(categoires)))
+    其中cat.categories可以打印出类别，enumarate(categoires)会为 categories 中的每个元素生成一个 (index, value) 的元组，index 是元素的索引，value 是元素的值。
+通过 dict() 将这些 (index, value) 元组转换为一个字典，其中索引作为键，元素值作为值。
+
+注意：编码在df_encode[col].astype('category').cat.codes这一步的时候，是按照字母顺序为每一个类别分配codes, 解码在dict(enumarate(categoires)编造字典的时候，也是按照字母顺序，所以可以变回
+
+  e)对类别进行编码
+  >>> cat_cols_train = df_train_imputed.select_dtypes(include=['object']).columns
+  >>> ordinal_encoder = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)
+  df_train_imputed[cat_cols_train] = ordinal_encoder.fit_transform(df_train_imputed[cat_cols_train].astype(str))
+
+
+2）移除异常值
+def remove_outliers_iqr(df, column):   
+    Q1 = df[column].quantile(0.25)
+    Q3 = df[column].quantile(0.75)
+    IQR = Q3 - Q1   
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR    
+    df_out = df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+    return df_out
