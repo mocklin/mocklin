@@ -42,3 +42,13 @@ def remove_outliers_iqr(df, column):
     upper_bound = Q3 + 1.5 * IQR    
     df_out = df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
     return df_out
+
+3)观察变量之间的关系
+ a)成对变量关系图
+ sns.pairplot(x[['price', 'milage', 'model_year', 'engine', 'fuel_type']], hue='fuel_type')
+ 生成一个成对变量的关系图矩阵。每个变量与其他变量的关系通过散点图显示。对角线上通常显示该变量的分布（如直方图或密度图）
+
+ b)生成柱状图，其中y轴是平均值
+ sns.barplot(x='transmission', y='price', data=df_train_no_outliers, errorbar=None)
+
+
